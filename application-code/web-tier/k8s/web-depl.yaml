@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-tier-depl
+  labels:
+    tier: web
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      tier: web
+  template:
+    metadata:
+      labels:
+        tier: web
+    spec:
+      containers:
+      - name: frontend
+        image: dhaprako/three-tier-frontend:v4
+        ports:
+        - containerPort: 3000
