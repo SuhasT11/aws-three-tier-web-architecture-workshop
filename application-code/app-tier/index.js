@@ -4,10 +4,12 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const os = require('os');
 const fetch = require('node-fetch');
+const helmet = require('helmet'); // Import helmet for security
 
 const app = express();
 const port = 4000;
 
+app.use(helmet()); // Use helmet to secure Express apps by setting various HTTP headers
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(cors());
@@ -27,8 +29,11 @@ app.post('/transaction', (req,res)=>{
         console.log(req.body);
         console.log(req.body.amount);
         console.log(req.body.desc);
-        var success = transactionService.addTransaction(req.body.amount,req.body.desc);
-        if (success = 200) res.json({ message: 'added transaction successfully'});
+        // Ensure input is sanitized or validated
+        const amount = parseFloat(req.body.amount);
+        const desc = req.body.desc ? req.body.desc.toString() : '';
+        var success = transactionService.addTransaction(amount, desc);
+        if (success === 200) res.json({ message: 'added transaction successfully'}); // Corrected assignment to comparison
     }catch (err){
         res.json({ message: 'something went wrong', error : err.message});
     }
@@ -67,10 +72,14 @@ app.delete('/transaction',(req,res)=>{
 //DELETE ONE TRANSACTION
 app.delete('/transaction/id', (req,res)=>{
     try{
-        //probably need to do some kind of parameter checking
-        transactionService.deleteTransactionById(req.body.id, function(result){
+        // Input validation
+        const id = parseInt(req.body.id, 10);
+        if (isNaN(id)) {
+            throw new Error('Invalid transaction ID');
+        }
+        transactionService.deleteTransactionById(id, function(result){
             res.statusCode = 200;
-            res.json({message: `transaction with id ${req.body.id} seemingly deleted`});
+            res.json({message: `transaction with id ${id} seemingly deleted`});
         })
     } catch (err){
         res.json({message:"error deleting transaction", error: err.message});
@@ -79,9 +88,13 @@ app.delete('/transaction/id', (req,res)=>{
 
 //GET SINGLE TRANSACTION
 app.get('/transaction/id',(req,res)=>{
-    //also probably do some kind of parameter checking here
     try{
-        transactionService.findTransactionById(req.body.id,function(result){
+        // Input validation
+        const id = parseInt(req.body.id, 10);
+        if (isNaN(id)) {
+            throw new Error('Invalid transaction ID');
+        }
+        transactionService.findTransactionById(id,function(result){
             res.statusCode = 200;
             var id = result[0].id;
             var amt = result[0].amount;
