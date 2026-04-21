@@ -177,3 +177,111 @@ App Tier AMI
 
 	AppTierImage
 	App Tier
+
+target group
+	instances
+	AppTierTargetGroup
+	HTTP 4000
+	vpc
+	/health
+
+	
+Internal Load Balancer 
+	app-tier-internal-lb
+	internal
+	vpc
+	private app subnet - 2
+	internal-lb-sg
+	HTTP 80
+	internal-lb-sg
+
+
+Launch Template
+	AppTierLaunchTemplate
+	LaunchTemplate for AppTier
+	select AppTierImage
+	dont select subnet
+	sg - AppTierSG
+	IAM instance profile - ec2ssm
+
+
+Auto Scaling group
+	AppTierASG
+	vpc
+	private app subnet - 2
+	lb - AppTierTargetGroup
+	
+
+
+Web Instance Deployment
+	WebLayer
+	aws linux kernel-6.18
+	no key pair
+	public-web-subnet-az1
+	Auto-assign public IP - enabled
+	WebTierSG
+	advanced details -> IAM instance profile -> ec2ssm
+
+	connect using ssm
+
+	sudo -su ec2-user
+	ping 8.8.8.8
+
+Configure Web Instance
+	curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.38.0/install.sh | bash
+	source ~/.bashrc
+	nvm install 16
+	nvm use 16
+	git clone https://github.com/SuhasT11/aws-three-tier-web-architecture-workshop.git
+	cd aws-three-tier-web-architecture-workshop/application-code/
+	Update Config File
+
+		application-code/nginx.conf
+		replace [INTERNAL-LOADBALANCER-DNS] with your internal load balancer’s DNS entry
+	cd web-tier
+	npm install 
+	npm run build
+	sudo dnf install nginx -y
+	cd /etc/nginx
+	ls
+	sudo rm nginx.conf
+	 cp /home/ec2-user/aws-three-tier-web-architecture-workshop/application-code/nginx.conf .
+	 keep the build in this path /home/ec2-user/web-tier/build
+	 sudo service nginx restart
+	 chmod -R 755 /home/ec2-user
+	 sudo chkconfig nginx on
+	 verify using public IP
+
+Web Tier AMI
+
+	WebTierImage
+	Image for web tier
+
+
+Target groups
+	WebTierTargetGroup
+	HTTP 80
+	vpc
+	/health
+
+Application Load Balancer
+	web-tier-external-lb
+	Internet-facing
+	public subnet 2
+	sg - WebTierSG
+	WebTierTargetGroup
+
+Create launch template
+	WebTierLaunchTemplate
+    Launch Template for WebTier
+    AMI - WebTierImage
+    t3micro
+    sg - webTier-sg
+
+
+Create Auto Scaling group
+	WebTierASG
+	WebTierLaunchTemplate
+	VPC
+	subnet public 2
+	lb - WebTierTargetGroup
